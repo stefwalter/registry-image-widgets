@@ -44,27 +44,29 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(4);
-	__webpack_require__(5);
 	__webpack_require__(6);
 	__webpack_require__(7);
 	__webpack_require__(8);
+	__webpack_require__(9);
 	__webpack_require__(10);
-	__webpack_require__(11);
 	__webpack_require__(12);
 	__webpack_require__(13);
 	__webpack_require__(14);
 	__webpack_require__(15);
 	__webpack_require__(16);
 	__webpack_require__(17);
-	module.exports = __webpack_require__(18);
+	__webpack_require__(18);
+	__webpack_require__(19);
+	module.exports = __webpack_require__(20);
 
 
 /***/ },
 /* 1 */,
 /* 2 */,
 /* 3 */,
-/* 4 */
+/* 4 */,
+/* 5 */,
+/* 6 */
 /***/ function(module, exports) {
 
 	/*
@@ -177,6 +179,58 @@
 	                weak.set(image, layers);
 	            }
 	            return layers;
+	        };
+	    }
+	])
+	
+	.factory('imagestreamTags', [
+	    'WeakMap',
+	    function(WeakMap) {
+	        var weak = new WeakMap();
+	        return function imagestreamTags(imagestream) {
+	            if (!imagestream)
+	                return [ ];
+	            var name, build, tags = weak.get(imagestream);
+	            if (!tags) {
+	                build = { };
+	                angular.forEach(imagestream.spec.tags, function(tag) {
+	                    build[tag.name] = build[tag.name] || { name: tag.name, imagestream: imagestream };
+	                    build[tag.name].spec = angular.copy(tag);
+	                });
+	                angular.forEach(imagestream.status.tags, function(tag) {
+	                    build[tag.tag] = build[tag.tag] || { name: tag.tag, imagestream: imagestream };
+	                    build[tag.tag].status = angular.copy(tag);
+	                });
+	                tags = [ ];
+	                for (name in build)
+	                    tags.push(build[name]);
+	                weak.set(imagestream, tags);
+	                console.log("tags", tags, build, imagestream);
+	            }
+	            return tags;
+	        };
+	    }
+	])
+	
+	.factory('imagestreamTagFromName', [
+	    function() {
+	        return function imagestreamFromName(imagestream, from) {
+	            var parts, result = [ ];
+	            if (from && from.kind === "ImageStreamImage")
+	                result.delimiter = "@";
+	            else if (from && from.kind === "ImageStreamTag")
+	                result.delimiter = ":";
+	            if (result.delimiter) {
+	                parts = from.name.split(result.delimiter);
+	                if (parts.length === 1) {
+	                    result.push(imagestream.spec.name, parts[0]);
+	                } else {
+	                    result.push(parts.shift());
+	                    result.push(parts.join(result.delimiter));
+	                }
+	                result.qualified = result.join(result.delimiter);
+	            }
+	            return result;
 	        };
 	    }
 	])
@@ -315,13 +369,29 @@
 	            templateUrl: 'registry-image-widgets/views/imagestream-meta.html',
 	        };
 	    }
+	])
+	
+	.directive('registryImagestreamListing', [
+	    'imagestreamTags',
+	    function(imagestreamTags) {
+	        return {
+	            restrict: 'E',
+	            scope: {
+	                imagestream: '=',
+	            },
+	            templateUrl: 'views/imagestream-listing.html',
+	            link: function(scope, element, attrs) {
+	                scope.imagestreamTags = imagestreamTags;
+	            }
+	        };
+	    }
 	]);
 	
 	}());
 
 
 /***/ },
-/* 5 */
+/* 7 */
 /***/ function(module, exports) {
 
 	/*
@@ -413,7 +483,7 @@
 
 
 /***/ },
-/* 6 */
+/* 8 */
 /***/ function(module, exports) {
 
 	/* globals moment */
@@ -471,7 +541,7 @@
 
 
 /***/ },
-/* 7 */
+/* 9 */
 /***/ function(module, exports) {
 
 	/*
@@ -608,20 +678,20 @@
 
 
 /***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	// removed by extract-text-webpack-plugin
-
-/***/ },
-/* 9 */,
 /* 10 */
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
 
 /***/ },
-/* 11 */
+/* 11 */,
+/* 12 */
+/***/ function(module, exports) {
+
+	// removed by extract-text-webpack-plugin
+
+/***/ },
+/* 13 */
 /***/ function(module, exports) {
 
 	var angular=window.angular,ngModule;
@@ -632,7 +702,7 @@
 	module.exports=v1;
 
 /***/ },
-/* 12 */
+/* 14 */
 /***/ function(module, exports) {
 
 	var angular=window.angular,ngModule;
@@ -643,7 +713,7 @@
 	module.exports=v1;
 
 /***/ },
-/* 13 */
+/* 15 */
 /***/ function(module, exports) {
 
 	var angular=window.angular,ngModule;
@@ -654,7 +724,7 @@
 	module.exports=v1;
 
 /***/ },
-/* 14 */
+/* 16 */
 /***/ function(module, exports) {
 
 	var angular=window.angular,ngModule;
@@ -665,7 +735,7 @@
 	module.exports=v1;
 
 /***/ },
-/* 15 */
+/* 17 */
 /***/ function(module, exports) {
 
 	var angular=window.angular,ngModule;
@@ -676,18 +746,18 @@
 	module.exports=v1;
 
 /***/ },
-/* 16 */
+/* 18 */
 /***/ function(module, exports) {
 
 	var angular=window.angular,ngModule;
 	try {ngModule=angular.module(["ng"])}
 	catch(e){ngModule=angular.module("ng",[])}
-	var v1="<div ng-repeat=\"statustags in imagestream.status.tags\"> <div ng-repeat=\"condition in statustags.conditions\" ng-if=\"condition.type == 'ImportSuccess' && condition.status == 'False'\" class=\"alert alert-danger\"> <span class=\"pficon pficon-error-circle-o\"></span>\n<span translate>{{ condition.message }}. Timestamp: {{ condition.lastTransitionTime }} Error count: {{ condition.generation }}</span>\n<a translate ng-if=\"imagestreamModify\" ng-click=\"imagestreamModify(imagestream)\" class=\"alert-link\">Edit image stream</a> </div> </div> <dl class=\"dl-horizontal left\"> <dt translate>Access Policy</dt> <dd ng-switch=\"projectSharing(imagestream.metadata.namespace)\"> <div ng-switch-when=\"anonymous\"> <a translate ng-click=\"projectModify(imagestream.metadata.namespace)\">Images may be pulled by anonymous users</a>\n<i title=\"Images accessible to anonymous users\" class=\"fa fa-unlock registry-imagestream-lock\"></i> </div> <div ng-switch-when=\"shared\"> <a translate ng-click=\"projectModify(imagestream.metadata.namespace)\">Images may be pulled by any authenticated user or group</a>\n<i title=\"Images accessible to authenticated users\" class=\"fa fa-lock registry-imagestream-lock\"></i> </div> <div ng-switch-when=\"private\"> <a translate ng-click=\"projectModify(imagestream.metadata.namespace)\">Images may only be pulled by specific users or groups</a>\n<i title=\"Images only accessible to members\" class=\"fa fa-lock registry-imagestream-lock\"></i> </div> <div ng-switch-default> <a translate ng-click=\"projectModify(imagestream.metadata.namespace)\">Unknown</a>\n<i title=\"Unknown or invalid image access policy\" class=\"fa fa-lock registry-imagestream-lock\"></i> </div> </dd> <dt translate>Pull repository</dt> <dd ng-if=\"imagestream.spec.dockerImageRepository\"><tt>{{imagestream.spec.dockerImageRepository}}</tt></dd> <dd ng-if=\"!imagestream.spec.dockerImageRepository\"><em translate>None</em></dd> <dt translate>Image count</dt> <dd>{{imagestream.status.tags.length}}</dd> </dl>";
+	var v1="<div ng-repeat=\"statustags in imagestream.status.tags\"> <div ng-repeat=\"condition in statustags.conditions\" ng-if=\"condition.type == 'ImportSuccess' && condition.status == 'False'\" class=\"alert alert-danger\"> <span class=\"pficon pficon-error-circle-o\"></span>\n<span translate>{{ condition.message }}. Timestamp: {{ condition.lastTransitionTime }} Error count: {{ condition.generation }}</span>\n<a translate ng-if=\"imagestreamModify\" ng-click=\"imagestreamModify(imagestream)\" class=\"alert-link\">Edit image stream</a> </div> </div> <dl class=\"dl-horizontal left\"> <dt translate ng-if=\"projectSharing\">Access Policy</dt> <dd ng-if=\"projectSharing\" ng-switch=\"projectSharing(imagestream.metadata.namespace)\"> <div ng-switch-when=\"anonymous\"> <a translate ng-if=\"projectModify\" ng-click=\"projectModify(imagestream.metadata.namespace)\">Images may be pulled by anonymous users</a>\n<span translate ng-if=\"!projectModify\">Images may be pulled by anonymous users</span>\n<i title=\"Images accessible to anonymous users\" class=\"fa fa-unlock registry-imagestream-lock\"></i> </div> <div ng-switch-when=\"shared\"> <a translate ng-if=\"projectModify\" ng-click=\"projectModify(imagestream.metadata.namespace)\">Images may be pulled by any authenticated user or group</a>\n<span translate ng-if=\"!projectModify\">Images may be pulled by any authenticated user or group</span>\n<i title=\"Images accessible to authenticated users\" class=\"fa fa-lock registry-imagestream-lock\"></i> </div> <div ng-switch-when=\"private\"> <a translate ng-if=\"projectModify\" ng-click=\"projectModify(imagestream.metadata.namespace)\">Images may only be pulled by specific users or groups</a>\n<span translate ng-if=\"!projectModify\">Images may only be pulled by specific users or groups</span>\n<i title=\"Images only accessible to members\" class=\"fa fa-lock registry-imagestream-lock\"></i> </div> <div ng-switch-default> <a translate ng-if=\"projectModify\" ng-click=\"projectModify(imagestream.metadata.namespace)\">Unknown</a>\n<span translate ng-if=\"!projectModify\">Unknown</span>\n<i title=\"Unknown or invalid image access policy\" class=\"fa fa-lock registry-imagestream-lock\"></i> </div> </dd> <dt translate ng-if-start=\"imagestream.spec.dockerImageRepository\">Follows docker repo:</dt> <dd ng-if-end><tt>{{imagestream.spec.dockerImageRepository}}</tt></dd> <dt>Pulling repository:</dt> <dd><tt>{{imagestream.status.dockerImageRepository}}</tt></dd> <dt translate>Image count</dt> <dd>{{imagestream.status.tags.length}}</dd> </dl>";
 	ngModule.run(["$templateCache",function(c){c.put("registry-image-widgets/views/imagestream-body.html",v1)}]);
 	module.exports=v1;
 
 /***/ },
-/* 17 */
+/* 19 */
 /***/ function(module, exports) {
 
 	var angular=window.angular,ngModule;
@@ -698,7 +768,7 @@
 	module.exports=v1;
 
 /***/ },
-/* 18 */
+/* 20 */
 /***/ function(module, exports) {
 
 	var angular=window.angular,ngModule;

@@ -112,6 +112,58 @@ angular.module('registryUI.images', [
     }
 ])
 
+.factory('imagestreamTags', [
+    'WeakMap',
+    function(WeakMap) {
+        var weak = new WeakMap();
+        return function imagestreamTags(imagestream) {
+            if (!imagestream)
+                return [ ];
+            var name, build, tags = weak.get(imagestream);
+            if (!tags) {
+                build = { };
+                angular.forEach(imagestream.spec.tags, function(tag) {
+                    build[tag.name] = build[tag.name] || { name: tag.name, imagestream: imagestream };
+                    build[tag.name].spec = angular.copy(tag);
+                });
+                angular.forEach(imagestream.status.tags, function(tag) {
+                    build[tag.tag] = build[tag.tag] || { name: tag.tag, imagestream: imagestream };
+                    build[tag.tag].status = angular.copy(tag);
+                });
+                tags = [ ];
+                for (name in build)
+                    tags.push(build[name]);
+                weak.set(imagestream, tags);
+                console.log("tags", tags, build, imagestream);
+            }
+            return tags;
+        };
+    }
+])
+
+.factory('imagestreamTagFromName', [
+    function() {
+        return function imagestreamFromName(imagestream, from) {
+            var parts, result = [ ];
+            if (from && from.kind === "ImageStreamImage")
+                result.delimiter = "@";
+            else if (from && from.kind === "ImageStreamTag")
+                result.delimiter = ":";
+            if (result.delimiter) {
+                parts = from.name.split(result.delimiter);
+                if (parts.length === 1) {
+                    result.push(imagestream.spec.name, parts[0]);
+                } else {
+                    result.push(parts.shift());
+                    result.push(parts.join(result.delimiter));
+                }
+                result.qualified = result.join(result.delimiter);
+            }
+            return result;
+        };
+    }
+])
+
 .directive('registryImageBody', [
     'imageLayers',
     'imageDockerConfig',
@@ -244,6 +296,22 @@ angular.module('registryUI.images', [
                 imagestream: '=',
             },
             templateUrl: 'registry-image-widgets/views/imagestream-meta.html',
+        };
+    }
+])
+
+.directive('registryImagestreamListing', [
+    'imagestreamTags',
+    function(imagestreamTags) {
+        return {
+            restrict: 'E',
+            scope: {
+                imagestream: '=',
+            },
+            templateUrl: 'views/imagestream-listing.html',
+            link: function(scope, element, attrs) {
+                scope.imagestreamTags = imagestreamTags;
+            }
         };
     }
 ]);
